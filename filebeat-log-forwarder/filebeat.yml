@@ -1,0 +1,201 @@
+#========================= Filebeat global options ============================
+# Name of the registry file. If a relative path is used, it is considered relative to the
+# data path.
+filebeat.registry_file: ${path.data}/registry
+#
+# These config files must have the full filebeat config part inside, but only
+# the prospector part is processed. All global options like spool_size are ignored.
+# The config_dir MUST point to a different directory then where the main filebeat config file is in.
+# filebeat.config_dir:
+
+# How long filebeat waits on shutdown for the publisher to finish.
+# Default is 0, not waiting.
+filebeat.shutdown_timeout: 0
+
+# Enable filebeat config reloading
+filebeat.config:
+  prospectors:
+    #enabled: false
+    path: ${path.config}/prospectors.d/*.yml
+    reload.enabled: true
+    reload.period: 10s
+  modules:
+    #enabled: false
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: true
+    reload.period: 10s
+
+
+#================================ General =====================================
+# The name of the shipper that publishes the network data. It can be used to group
+# all the transactions sent by a single shipper in the web interface.
+# name:
+
+# The tags of the shipper are included in their own field with each transaction published.
+tags: '${FILEBEAT_TAGS:docker}'
+
+# Optional fields that you can specify to add additional information to the output.
+fields:
+  env: ${FILEBEAT_ENV:development}
+
+# If this option is set to true, the custom fields are stored as top-level
+# fields in the output document instead of being grouped under a fields
+# sub-dictionary. Default is false.
+fields_under_root: true
+
+
+#================================= Paths ======================================
+# The home path for the filebeat installation. This is the default base path
+# for all other path settings and for miscellaneous files that come with the
+# distribution (for example, the sample dashboards).
+# If not set by a CLI flag or in the configuration file, the default for the
+# home path is the location of the binary.
+path.home: ${FILEBEAT_PATH_HOME:/usr/share/filebeat}
+
+# The configuration path for the filebeat installation. This is the default
+# base path for configuration files, including the main YAML configuration file
+# and the Elasticsearch template file. If not set by a CLI flag or in the
+# configuration file, the default for the configuration path is the home path.
+path.config: ${path.home}
+
+# The data path for the filebeat installation. This is the default base path
+# for all the files in which filebeat needs to store its data. If not set by a
+# CLI flag or in the configuration file, the default for the data path is a data
+# subdirectory inside the home path.
+path.data: ${path.home}/data
+
+# The logs path for a filebeat installation. This is the default location for
+# the Beat's log files. If not set by a CLI flag or in the configuration file,
+# the default for the logs path is a logs subdirectory inside the home path.
+path.logs: ${path.home}/logs
+
+
+#=========================== Filebeat prospectors =============================
+filebeat.prospectors:
+- type: log
+  # Change to true to enable this prospector configuration.
+  enabled: true
+  # Paths that should be crawled and fetched. Glob based paths.
+  paths:
+    - ${FILEBEAT_APP_LOG_DIRECTORY:/log}/*.log*
+
+  # Exclude lines. A list of regular expressions to match. It drops the lines that are
+  # matching any regular expression from the list.
+  # exclude_lines: ['^DBG']
+
+  # Include lines. A list of regular expressions to match. It exports the lines that are
+  # matching any regular expression from the list.
+  # include_lines: ['^ERR', '^WARN']
+
+  # Exclude files. A list of regular expressions to match. Filebeat drops the files that
+  # are matching any regular expression from the list. By default, no files are dropped.
+  # exclude_files: ['.gz$']
+
+  # Optional additional fields. These fields can be freely picked
+  # to add additional information to the crawled log files for filtering
+  # fields:
+  #   level: debug
+  #   review: 1
+
+  ### Multiline options
+  # The regexp Pattern that has to be matched. The example pattern matches all lines starting with [
+  # multiline.pattern: ^\[
+
+  # Defines if the pattern set under pattern should be negated or not. Default is false.
+  # multiline.negate: false
+
+  # Match can be set to "after" or "before". It is used to define if lines should be append to a pattern
+  # that was (not) matched before or after or as long as a pattern is not matched based on negate.
+  # Note: After is the equivalent to previous and before is the equivalent to to next in Logstash
+  # multiline.match: after
+
+
+#==================== Elasticsearch template setting ==========================
+# setup.template.settings:
+  # index.number_of_shards: 3
+  # index.codec: best_compression
+  # _source.enabled: false
+
+
+#============================== Dashboards =====================================
+# These settings control loading the sample dashboards to the Kibana index. Loading
+# the dashboards is disabled by default and can be enabled either by setting the
+# options here, or by using the `-setup` CLI flag or the `setup` command.
+setup.dashboards.enabled: false
+
+# The URL from where to download the dashboards archive. By default this URL
+# has a value which is computed based on the Beat name and version. For released
+# versions, this URL points to the dashboard archive on the artifacts.elastic.co
+# website.
+# setup.dashboards.url:
+
+
+#============================== Kibana =====================================
+# Starting with Beats version 6.0.0, the dashboards are loaded via the Kibana API.
+# This requires a Kibana endpoint configuration.
+# setup.kibana:
+  # Scheme and port can be left out and will be set to the default (http and 5601)
+  # In case you specify and additional path, the scheme is required: http://localhost:5601/path
+  # IPv6 addresses should always be defined as: https://[2001:db8::1]:5601
+  # host: "kibana:5601"
+
+
+#============================= Elastic Cloud ==================================
+# The cloud.id setting overwrites the `output.elasticsearch.hosts` and `setup.kibana.host` options.
+# You can find the `cloud.id` in the Elastic Cloud web UI.
+#cloud.id:
+
+# The cloud.auth setting overwrites the `output.elasticsearch.username` and
+# `output.elasticsearch.password` settings. The format is `<user>:<pass>`.
+#cloud.auth:
+
+
+#================================ Outputs =====================================
+#-------------------------- Elasticsearch output ------------------------------
+# output.elasticsearch:
+  # Array of hosts to connect to.
+  # hosts: ["elasticsearch:9200"]
+
+  # Optional protocol and basic auth credentials.
+  # protocol: "https"
+  # username: "elastic"
+  # password: "changeme"
+
+#----------------------------- Logstash output --------------------------------
+output.logstash:
+  # The Logstash hosts
+  hosts: '${FILEBEAT_LOGSTASH_HOSTS:logstash.shared:5044}'
+
+  # Number of workers per Logstash host.
+  # worker: 1
+
+  # Set gzip compression level.
+  # compression_level: 3
+
+  # Optional load balance the events between the Logstash hosts. Default is false.
+  loadbalance: false
+
+  # Optional index name. The default index name is set to filebeat
+  # in all lowercase.
+  index: 'filebeat'
+
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  # ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+  # Certificate for SSL client authentication
+  # ssl.certificate: "/etc/pki/client/cert.pem"
+
+  # Client Certificate Key
+  # ssl.key: "/etc/pki/client/cert.key"
+
+
+#================================ Logging =====================================
+# Sets log level. The default log level is info.
+# Available log levels are: critical, error, warning, info, debug
+logging.level: info
+
+# At debug level, you can selectively enable logging only for some components.
+# To enable all selectors use ["*"]. Examples of other selectors are "beat",
+# "publish", "service".
+# logging.selectors: ["*"]
