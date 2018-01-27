@@ -15,12 +15,12 @@ filebeat.shutdown_timeout: 0
 # Enable filebeat config reloading
 filebeat.config:
   prospectors:
-    #enabled: false
+    enabled: false
     path: ${path.config}/prospectors.d/*.yml
     reload.enabled: true
     reload.period: 10s
   modules:
-    #enabled: false
+    enabled: false
     path: ${path.config}/modules.d/*.yml
     reload.enabled: true
     reload.period: 10s
@@ -29,7 +29,7 @@ filebeat.config:
 #================================ General =====================================
 # The name of the shipper that publishes the network data. It can be used to group
 # all the transactions sent by a single shipper in the web interface.
-# name:
+name: ${FILEBEAT_NAME:docker-filebeat-log-forwarder}
 
 # The tags of the shipper are included in their own field with each transaction published.
 tags: '${FILEBEAT_TAGS:docker}'
@@ -42,6 +42,30 @@ fields:
 # fields in the output document instead of being grouped under a fields
 # sub-dictionary. Default is false.
 fields_under_root: true
+
+# Internal queue configuration for buffering events to be published.
+queue:
+  # Queue type by name (default 'mem')
+  # The memory queue will present all available events (up to the outputs
+  # bulk_max_size) to the output, the moment the output is ready to server
+  # another batch of events.
+  mem:
+    # Max number of events the queue can buffer.
+    events: 4096
+
+    # Hints the minimum number of events stored in the queue,
+    # before providing a batch of events to the outputs.
+    # A value of 0 (the default) ensures events are immediately available
+    # to be sent to the outputs.
+    flush.min_events: 0
+
+    # Maximum duration after which events are available to the outputs,
+    # if the number of events stored in the queue is < min_flush_events.
+    flush.timeout: 0s
+
+# Sets the maximum number of CPUs that can be executing simultaneously. The
+# default is the number of logical CPUs available in the system.
+# max_procs:
 
 
 #================================= Paths ======================================
@@ -110,24 +134,72 @@ filebeat.prospectors:
   # multiline.match: after
 
 
-#==================== Elasticsearch template setting ==========================
-# setup.template.settings:
-  # index.number_of_shards: 3
-  # index.codec: best_compression
-  # _source.enabled: false
-
-
 #============================== Dashboards =====================================
 # These settings control loading the sample dashboards to the Kibana index. Loading
 # the dashboards is disabled by default and can be enabled either by setting the
 # options here, or by using the `-setup` CLI flag or the `setup` command.
-setup.dashboards.enabled: false
+setup.dashboards.enabled: ${FILEBEAT_DASHBOARDS_ENABLED:false}
 
-# The URL from where to download the dashboards archive. By default this URL
-# has a value which is computed based on the Beat name and version. For released
-# versions, this URL points to the dashboard archive on the artifacts.elastic.co
-# website.
-# setup.dashboards.url:
+# The directory from where to read the dashboards. The default is the `kibana` folder in the home path.
+setup.dashboards.directory: ${path.home}/kibana
+
+# The URL from where to download the dashboards archive. It is used instead of the directory if it has a value.
+setup.dashboards.url: kibana.shared
+
+# The file archive (zip file) from where to read the dashboards. It is used instead
+# of the directory when it has a value.
+# setup.dashboards.file:
+
+# In case the archive contains the dashboards from multiple Beats, this lets you
+# select which one to load. You can load all the dashboards in the archive by
+# setting this to the empty string.
+setup.dashboards.beat: filebeat
+
+# The name of the Kibana index to use for setting the configuration. Default is ".kibana"
+setup.dashboards.kibana_index: .kibana
+
+# The Elasticsearch index name. This overwrites the index name defined in the
+# dashboards and index pattern. Example: testbeat-*
+# setup.dashboards.index:
+
+# Always use the Kibana API for loading the dashboards instead of autodetecting
+# how to install the dashboards by first querying Elasticsearch.
+setup.dashboards.always_kibana: false
+
+
+#============================== Template =====================================
+# Set to false to disable template loading.
+setup.template.enabled: ${FILEBEAT_TEMPLATE_ENABLED:false}
+
+# Template name. By default the template name is "filebeat-%{[beat.version]}"
+# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
+setup.template.name: "filebeat-%{[beat.version]}"
+
+# Template pattern. By default the template pattern is "-%{[beat.version]}-*" to apply to the default index settings.
+# The first part is the version of the beat and then -* is used to match all daily indices.
+# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
+setup.template.pattern: "filebeat-%{[beat.version]}-*"
+
+# Path to fields.yml file to generate the template
+setup.template.fields: "${path.config}/fields.yml"
+
+# Overwrite existing template
+setup.template.overwrite: false
+
+# Elasticsearch template settings
+setup.template.settings:
+  # A dictionary of settings to place into the settings.index dictionary
+  # of the Elasticsearch template. For more details, please check
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html
+  # index:
+  #   number_of_shards: 1
+  #   codec: best_compression
+  #   number_of_routing_shards: 30
+
+  # A dictionary of settings for the _source field. For more details, please check
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-source-field.html
+  # _source:
+  #   enabled: false
 
 
 #============================== Kibana =====================================
@@ -193,9 +265,45 @@ output.logstash:
 #================================ Logging =====================================
 # Sets log level. The default log level is info.
 # Available log levels are: critical, error, warning, info, debug
-logging.level: info
+logging.level: warning
 
 # At debug level, you can selectively enable logging only for some components.
 # To enable all selectors use ["*"]. Examples of other selectors are "beat",
 # "publish", "service".
-# logging.selectors: ["*"]
+logging.selectors: ["*"]
+
+# Send all logging output to syslog. The default is false.
+logging.to_syslog: false
+
+# If enabled, filebeat periodically logs its internal metrics that have changed
+# in the last period. For each metric that changed, the delta from the value at
+# the beginning of the period is logged. Also, the total values for
+# all non-zero internal metrics are logged on shutdown. The default is true.
+logging.metrics.enabled: true
+
+# The period after which to log the internal metrics. The default is 30s.
+logging.metrics.period: 30s
+
+# Set to true to log messages in json format.
+logging.json: false
+
+# Logging to rotating files. Set logging.to_files to false to disable logging to files.
+logging.to_files: true
+
+logging.files:
+  # Configure the path where the logs are written. The default is the logs directory
+  # under the home path (the binary location).
+  path: ${path.logs}
+
+  # The name of the files where the logs are written to.
+  name: filebeat
+
+  # Configure log file size limit. If limit is reached, log file will be automatically rotated (10MB = 10485760)
+  rotateeverybytes: 10485760
+
+  # Number of rotated log files to keep. Oldest files will be deleted first.
+  keepfiles: 7
+
+  # The permissions mask to apply when rotating log files. The default value is 0600.
+  # Must be a valid Unix-style file permissions mask expressed in octal notation.
+  permissions: 0600
