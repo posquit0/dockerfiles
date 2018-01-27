@@ -239,17 +239,25 @@ output.logstash:
   hosts: '${FILEBEAT_LOGSTASH_HOSTS:logstash.shared:5044}'
 
   # Number of workers per Logstash host.
-  # worker: 1
+  worker: ${FILEBEAT_LOGSTASH_WORKER:1}
 
   # Set gzip compression level.
-  # compression_level: 3
+  compression_level: ${FILEBEAT_LOGSTASH_COMPRESSION_LEVEL:3}
 
   # Optional load balance the events between the Logstash hosts. Default is false.
-  loadbalance: false
+  loadbalance: ${FILEBEAT_LOGSTASH_LOADBALANCE:true}
 
   # Optional index name. The default index name is set to filebeat
   # in all lowercase.
-  index: 'filebeat'
+  index: ${FILEBEAT_LOGSTASH_INDEX:filebeat}
+
+  # The number of seconds to wait for responses from the Logstash server before timing out. The default is 30 (seconds).
+  timeout: ${FILEBEAT_LOGSTASH_TIMEOUT:30s}
+
+  # The number of times to retry publishing an event after a publishing failure. After the specified number of retries, the events are typically dropped. Some Beats, such as Filebeat, ignore the max_retries setting and retry until all events are published.
+  # Set max_retries to a value less than 0 to retry until all events are published.
+  # Default is 3.
+  max_retries: ${FILEBEAT_LOGSTASH_MAX_RETRIES:5}
 
   # Optional SSL. By default is off.
   # List of root certificates for HTTPS server verifications
@@ -260,6 +268,38 @@ output.logstash:
 
   # Client Certificate Key
   # ssl.key: "/etc/pki/client/cert.key"
+
+#------------------------------- File output -----------------------------------
+output.file:
+  # Boolean flag to enable or disable the output module.
+  enabled: false
+
+  # Path to the directory where to save the generated files. The option is mandatory.
+  path: "/tmp/filebeat"
+
+  # Name of the generated files. The default is `filebeat` and it generates
+  # files: `filebeat`, `filebeat.1`, `filebeat.2`, etc.
+  filename: filebeat
+
+  # Maximum size in kilobytes of each file. When this size is reached, and on
+  # every filebeat restart, the files are rotated. The default value is 10240 kB.
+  rotate_every_kb: 10000
+
+  # Maximum number of files under path. When this number of files is reached,
+  # the oldest file is deleted and the rest are shifted from last to first. The
+  # default is 7 files.
+  number_of_files: 7
+
+  # Permissions to use for file creation. The default is 0600.
+  permissions: 0600
+
+#----------------------------- Console output ---------------------------------
+output.console:
+  # Boolean flag to enable or disable the output module.
+  enabled: false
+
+  # Pretty print json event
+  pretty: true
 
 
 #================================ Logging =====================================
