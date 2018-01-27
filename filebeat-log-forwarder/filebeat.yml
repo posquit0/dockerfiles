@@ -94,6 +94,37 @@ path.data: ${path.home}/data
 path.logs: ${path.home}/logs
 
 
+#================================ Processors ===================================
+processors:
+- add_cloud_metadata: ~
+- add_docker_metadata:
+    # Docker socket (UNIX or TCP socket). It uses unix:///var/run/docker.sock by default.
+    host: "unix:///var/run/docker.sock"
+    # Time of inactivity to consider we can clean and forget metadata for a container, 60s by default.
+    cleanup_timeout: 60
+    # Match container id from a log path present in source field. Enabled by default.
+    match_source: false
+    # match_fields: ["system.process.cgroup.id"]
+    # To connect to Docker over TLS you must specify a client and CA certificate.
+    # ssl:
+    #   certificate_authority: "/etc/pki/root/ca.pem"
+    #   certificate: "/etc/pki/client/cert.pem"
+    #   key: "/etc/pki/client/cert.key"
+
+
+#========================== Filebeat autodiscover ==============================
+filebeat.autodiscover:
+  providers:
+    - type: docker
+#      templates:
+#        - condition:
+#            equals.docker.container.image: busybox
+#          config:
+#            - type: log
+#              paths:
+#                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+
 #=========================== Filebeat prospectors =============================
 filebeat.prospectors:
 - type: log
@@ -132,6 +163,40 @@ filebeat.prospectors:
   # that was (not) matched before or after or as long as a pattern is not matched based on negate.
   # Note: After is the equivalent to previous and before is the equivalent to to next in Logstash
   # multiline.match: after
+
+  ### Harvester closing options
+  # Close inactive closes the file handler after the predefined period.
+  # The period starts when the last line of the file was, not the file ModTime.
+  # Time strings like 2h (2 hours), 5m (5 minutes) can be used.
+  # close_inactive: 12h
+
+  # Close renamed closes a file handler when the file is renamed or rotated.
+  # Note: Potential data loss. Make sure to read and understand the docs for this option.
+  close_renamed: false
+
+  # When enabling this option, a file handler is closed immediately in case a file can't be found
+  # any more. In case the file shows up again later, harvesting will continue at the last known position
+  # after scan_frequency.
+  close_removed: true
+
+  # Closes the file handler as soon as the harvesters reaches the end of the file.
+  # By default this option is disabled.
+  # Note: Potential data loss. Make sure to read and understand the docs for this option.
+  close_eof: false
+
+  ### State options
+  # Files for the modification data is older then clean_inactive the state from the registry is removed
+  # By default this is disabled.
+  # clean_inactive: 0
+
+  # Removes the state for file which cannot be found on disk anymore immediately
+  clean_removed: true
+
+  # Close timeout closes the harvester after the predefined time.
+  # This is independent if the harvester did finish reading the file or not.
+  # By default this option is disabled.
+  # Note: Potential data loss. Make sure to read and understand the docs for this option.
+  # close_timeout: 0
 
 
 #============================== Dashboards =====================================
