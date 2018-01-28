@@ -103,11 +103,11 @@ processors:
     # Time of inactivity to consider we can clean and forget metadata for a container, 60s by default.
     # cleanup_timeout: 60
     # Match container id from a log path present in source field. Enabled by default.
-    # match_source: true
+    # match_source: false
     # Index in the source path split by / to look for container id. It defaults to 4 to match
     # match_source_index: 4
     # A list of fields to match a container id, at least one of them should hold a container id to get the event enriched.
-    # match_fields: ["system.process.cgroup.id"]
+    # match_fields: ["system.process.cgroup.id", "hostname"]
     # To connect to Docker over TLS you must specify a client and CA certificate.
     # ssl:
     #   certificate_authority: "/etc/pki/root/ca.pem"
