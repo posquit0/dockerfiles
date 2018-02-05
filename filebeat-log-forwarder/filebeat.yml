@@ -1,3 +1,5 @@
+######################## Filebeat Configuration ############################
+
 #========================= Filebeat global options ============================
 # Name of the registry file. If a relative path is used, it is considered relative to the
 # data path.
@@ -94,6 +96,146 @@ path.data: ${path.home}/data
 path.logs: ${path.home}/logs
 
 
+#================================ Logging =====================================
+# Sets log level. The default log level is info.
+# Available log levels are: critical, error, warning, info, debug
+logging.level: warning
+
+# At debug level, you can selectively enable logging only for some components.
+# To enable all selectors use ["*"]. Examples of other selectors are "beat", "publish", "service".
+logging.selectors: ["*"]
+
+# Send all logging output to syslog. The default is false.
+logging.to_syslog: false
+
+# If enabled, filebeat periodically logs its internal metrics that have changed
+# in the last period. For each metric that changed, the delta from the value at
+# the beginning of the period is logged. Also, the total values for
+# all non-zero internal metrics are logged on shutdown. The default is true.
+logging.metrics.enabled: true
+
+# The period after which to log the internal metrics. The default is 30s.
+logging.metrics.period: 30s
+
+# Set to true to log messages in json format.
+logging.json: false
+
+# Logging to rotating files. Set logging.to_files to false to disable logging to files.
+logging.to_files: true
+
+logging.files:
+  # Configure the path where the logs are written. The default is the logs directory
+  # under the home path (the binary location).
+  path: ${path.logs}
+
+  # The name of the files where the logs are written to.
+  name: filebeat
+
+  # Configure log file size limit. If limit is reached, log file will be automatically rotated (10MB = 10485760)
+  rotateeverybytes: 10485760
+
+  # Number of rotated log files to keep. Oldest files will be deleted first.
+  keepfiles: 7
+
+  # The permissions mask to apply when rotating log files. The default value is 0600.
+  # Must be a valid Unix-style file permissions mask expressed in octal notation.
+  permissions: 0600
+
+
+#============================== Dashboards =====================================
+# These settings control loading the sample dashboards to the Kibana index. Loading
+# the dashboards is disabled by default and can be enabled either by setting the
+# options here, or by using the `-setup` CLI flag or the `setup` command.
+setup.dashboards.enabled: ${FILEBEAT_DASHBOARDS_ENABLED:false}
+
+# The directory from where to read the dashboards. The default is the `kibana` folder in the home path.
+setup.dashboards.directory: ${path.home}/kibana
+
+# The URL from where to download the dashboards archive. It is used instead of the directory if it has a value.
+setup.dashboards.url: kibana.shared
+
+# The file archive (zip file) from where to read the dashboards. It is used instead
+# of the directory when it has a value.
+# setup.dashboards.file:
+
+# In case the archive contains the dashboards from multiple Beats, this lets you
+# select which one to load. You can load all the dashboards in the archive by
+# setting this to the empty string.
+setup.dashboards.beat: filebeat
+
+# The name of the Kibana index to use for setting the configuration. Default is ".kibana"
+setup.dashboards.kibana_index: .kibana
+
+# The Elasticsearch index name. This overwrites the index name defined in the
+# dashboards and index pattern. Example: testbeat-*
+# setup.dashboards.index:
+
+# Always use the Kibana API for loading the dashboards instead of autodetecting
+# how to install the dashboards by first querying Elasticsearch.
+setup.dashboards.always_kibana: false
+
+
+#============================== Template =====================================
+# Set to false to disable template loading.
+setup.template.enabled: ${FILEBEAT_TEMPLATE_ENABLED:false}
+
+# Template name. By default the template name is "filebeat-%{[beat.version]}"
+# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
+setup.template.name: "filebeat-%{[beat.version]}"
+
+# Template pattern. By default the template pattern is "-%{[beat.version]}-*" to apply to the default index settings.
+# The first part is the version of the beat and then -* is used to match all daily indices.
+# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
+setup.template.pattern: "filebeat-%{[beat.version]}-*"
+
+# Path to fields.yml file to generate the template
+setup.template.fields: "${path.config}/fields.yml"
+
+# Overwrite existing template
+setup.template.overwrite: false
+
+# Elasticsearch template settings
+setup.template.settings:
+  # A dictionary of settings to place into the settings.index dictionary
+  # of the Elasticsearch template. For more details, please check
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html
+  # index:
+  #   number_of_shards: 1
+  #   codec: best_compression
+  #   number_of_routing_shards: 30
+
+  # A dictionary of settings for the _source field. For more details, please check
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-source-field.html
+  # _source:
+  #   enabled: false
+
+
+#============================== Kibana =====================================
+setup.kibana:
+  # Scheme and port can be left out and will be set to the default (http and 5601)
+  # In case you specify and additional path, the scheme is required: http://localhost:5601/path
+  # IPv6 addresses should always be defined as: https://[2001:db8::1]:5601
+  host: "kibana.shared:5601"
+
+  # Optional protocol and basic auth credentials.
+  # protocol: "https"
+  # username: "elastic"
+  # password: "changeme"
+
+  # Optional HTTP Path
+  # path: ""
+
+
+#============================= Elastic Cloud ==================================
+# The cloud.id setting overwrites the `output.elasticsearch.hosts` and `setup.kibana.host` options.
+# You can find the `cloud.id` in the Elastic Cloud web UI.
+# cloud.id:
+
+# The cloud.auth setting overwrites the `output.elasticsearch.username` and
+# `output.elasticsearch.password` settings. The format is `<user>:<pass>`.
+# cloud.auth:
+
+
 #================================ Processors ===================================
 processors:
 - add_cloud_metadata: ~
@@ -126,6 +268,86 @@ processors:
 #             - type: docker
 #               containers.ids:
 #                 - "${data.docker.container.id}"
+
+
+#================================ Outputs =====================================
+#-------------------------- Elasticsearch output ------------------------------
+# output.elasticsearch:
+  # Array of hosts to connect to.
+  # hosts: ["elasticsearch:9200"]
+
+  # Optional protocol and basic auth credentials.
+  # protocol: "https"
+  # username: "elastic"
+  # password: "changeme"
+
+#----------------------------- Logstash output --------------------------------
+output.logstash:
+  # The Logstash hosts
+  hosts: '${FILEBEAT_LOGSTASH_HOSTS:logstash.shared:5044}'
+
+  # Number of workers per Logstash host.
+  worker: ${FILEBEAT_LOGSTASH_WORKER:1}
+
+  # Set gzip compression level.
+  compression_level: ${FILEBEAT_LOGSTASH_COMPRESSION_LEVEL:3}
+
+  # Optional load balance the events between the Logstash hosts. Default is false.
+  loadbalance: ${FILEBEAT_LOGSTASH_LOADBALANCE:true}
+
+  # Optional index name. The default index name is set to filebeat
+  # in all lowercase.
+  index: ${FILEBEAT_LOGSTASH_INDEX:filebeat}
+
+  # The number of seconds to wait for responses from the Logstash server before timing out. The default is 30 (seconds).
+  timeout: ${FILEBEAT_LOGSTASH_TIMEOUT:30s}
+
+  # The number of times to retry publishing an event after a publishing failure. After the specified number of retries, the events are typically dropped. Some Beats, such as Filebeat, ignore the max_retries setting and retry until all events are published.
+  # Set max_retries to a value less than 0 to retry until all events are published.
+  # Default is 3.
+  max_retries: ${FILEBEAT_LOGSTASH_MAX_RETRIES:5}
+
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  # ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+  # Certificate for SSL client authentication
+  # ssl.certificate: "/etc/pki/client/cert.pem"
+
+  # Client Certificate Key
+  # ssl.key: "/etc/pki/client/cert.key"
+
+#------------------------------- File output -----------------------------------
+output.file:
+  # Boolean flag to enable or disable the output module.
+  enabled: false
+
+  # Path to the directory where to save the generated files. The option is mandatory.
+  path: "/tmp/filebeat"
+
+  # Name of the generated files. The default is `filebeat` and it generates
+  # files: `filebeat`, `filebeat.1`, `filebeat.2`, etc.
+  filename: filebeat
+
+  # Maximum size in kilobytes of each file. When this size is reached, and on
+  # every filebeat restart, the files are rotated. The default value is 10240 kB.
+  rotate_every_kb: 10000
+
+  # Maximum number of files under path. When this number of files is reached,
+  # the oldest file is deleted and the rest are shifted from last to first. The
+  # default is 7 files.
+  number_of_files: 7
+
+  # Permissions to use for file creation. The default is 0600.
+  permissions: 0600
+
+#----------------------------- Console output ---------------------------------
+output.console:
+  # Boolean flag to enable or disable the output module.
+  enabled: false
+
+  # Pretty print json event
+  pretty: true
 
 
 #=========================== Filebeat prospectors =============================
@@ -221,218 +443,3 @@ filebeat.prospectors:
   # By default this option is disabled.
   # Note: Potential data loss. Make sure to read and understand the docs for this option.
   # close_timeout: 0
-
-
-#============================== Dashboards =====================================
-# These settings control loading the sample dashboards to the Kibana index. Loading
-# the dashboards is disabled by default and can be enabled either by setting the
-# options here, or by using the `-setup` CLI flag or the `setup` command.
-setup.dashboards.enabled: ${FILEBEAT_DASHBOARDS_ENABLED:false}
-
-# The directory from where to read the dashboards. The default is the `kibana` folder in the home path.
-setup.dashboards.directory: ${path.home}/kibana
-
-# The URL from where to download the dashboards archive. It is used instead of the directory if it has a value.
-setup.dashboards.url: kibana.shared
-
-# The file archive (zip file) from where to read the dashboards. It is used instead
-# of the directory when it has a value.
-# setup.dashboards.file:
-
-# In case the archive contains the dashboards from multiple Beats, this lets you
-# select which one to load. You can load all the dashboards in the archive by
-# setting this to the empty string.
-setup.dashboards.beat: filebeat
-
-# The name of the Kibana index to use for setting the configuration. Default is ".kibana"
-setup.dashboards.kibana_index: .kibana
-
-# The Elasticsearch index name. This overwrites the index name defined in the
-# dashboards and index pattern. Example: testbeat-*
-# setup.dashboards.index:
-
-# Always use the Kibana API for loading the dashboards instead of autodetecting
-# how to install the dashboards by first querying Elasticsearch.
-setup.dashboards.always_kibana: false
-
-
-#============================== Template =====================================
-# Set to false to disable template loading.
-setup.template.enabled: ${FILEBEAT_TEMPLATE_ENABLED:false}
-
-# Template name. By default the template name is "filebeat-%{[beat.version]}"
-# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
-setup.template.name: "filebeat-%{[beat.version]}"
-
-# Template pattern. By default the template pattern is "-%{[beat.version]}-*" to apply to the default index settings.
-# The first part is the version of the beat and then -* is used to match all daily indices.
-# The template name and pattern has to be set in case the elasticsearch index pattern is modified.
-setup.template.pattern: "filebeat-%{[beat.version]}-*"
-
-# Path to fields.yml file to generate the template
-setup.template.fields: "${path.config}/fields.yml"
-
-# Overwrite existing template
-setup.template.overwrite: false
-
-# Elasticsearch template settings
-setup.template.settings:
-  # A dictionary of settings to place into the settings.index dictionary
-  # of the Elasticsearch template. For more details, please check
-  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html
-  # index:
-  #   number_of_shards: 1
-  #   codec: best_compression
-  #   number_of_routing_shards: 30
-
-  # A dictionary of settings for the _source field. For more details, please check
-  # https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-source-field.html
-  # _source:
-  #   enabled: false
-
-
-#============================== Kibana =====================================
-# Starting with Beats version 6.0.0, the dashboards are loaded via the Kibana API.
-# This requires a Kibana endpoint configuration.
-# setup.kibana:
-  # Scheme and port can be left out and will be set to the default (http and 5601)
-  # In case you specify and additional path, the scheme is required: http://localhost:5601/path
-  # IPv6 addresses should always be defined as: https://[2001:db8::1]:5601
-  # host: "kibana:5601"
-
-
-#============================= Elastic Cloud ==================================
-# The cloud.id setting overwrites the `output.elasticsearch.hosts` and `setup.kibana.host` options.
-# You can find the `cloud.id` in the Elastic Cloud web UI.
-#cloud.id:
-
-# The cloud.auth setting overwrites the `output.elasticsearch.username` and
-# `output.elasticsearch.password` settings. The format is `<user>:<pass>`.
-#cloud.auth:
-
-
-#================================ Outputs =====================================
-#-------------------------- Elasticsearch output ------------------------------
-# output.elasticsearch:
-  # Array of hosts to connect to.
-  # hosts: ["elasticsearch:9200"]
-
-  # Optional protocol and basic auth credentials.
-  # protocol: "https"
-  # username: "elastic"
-  # password: "changeme"
-
-#----------------------------- Logstash output --------------------------------
-output.logstash:
-  # The Logstash hosts
-  hosts: '${FILEBEAT_LOGSTASH_HOSTS:logstash.shared:5044}'
-
-  # Number of workers per Logstash host.
-  worker: ${FILEBEAT_LOGSTASH_WORKER:1}
-
-  # Set gzip compression level.
-  compression_level: ${FILEBEAT_LOGSTASH_COMPRESSION_LEVEL:3}
-
-  # Optional load balance the events between the Logstash hosts. Default is false.
-  loadbalance: ${FILEBEAT_LOGSTASH_LOADBALANCE:true}
-
-  # Optional index name. The default index name is set to filebeat
-  # in all lowercase.
-  index: ${FILEBEAT_LOGSTASH_INDEX:filebeat}
-
-  # The number of seconds to wait for responses from the Logstash server before timing out. The default is 30 (seconds).
-  timeout: ${FILEBEAT_LOGSTASH_TIMEOUT:30s}
-
-  # The number of times to retry publishing an event after a publishing failure. After the specified number of retries, the events are typically dropped. Some Beats, such as Filebeat, ignore the max_retries setting and retry until all events are published.
-  # Set max_retries to a value less than 0 to retry until all events are published.
-  # Default is 3.
-  max_retries: ${FILEBEAT_LOGSTASH_MAX_RETRIES:5}
-
-  # Optional SSL. By default is off.
-  # List of root certificates for HTTPS server verifications
-  # ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
-
-  # Certificate for SSL client authentication
-  # ssl.certificate: "/etc/pki/client/cert.pem"
-
-  # Client Certificate Key
-  # ssl.key: "/etc/pki/client/cert.key"
-
-#------------------------------- File output -----------------------------------
-output.file:
-  # Boolean flag to enable or disable the output module.
-  enabled: false
-
-  # Path to the directory where to save the generated files. The option is mandatory.
-  path: "/tmp/filebeat"
-
-  # Name of the generated files. The default is `filebeat` and it generates
-  # files: `filebeat`, `filebeat.1`, `filebeat.2`, etc.
-  filename: filebeat
-
-  # Maximum size in kilobytes of each file. When this size is reached, and on
-  # every filebeat restart, the files are rotated. The default value is 10240 kB.
-  rotate_every_kb: 10000
-
-  # Maximum number of files under path. When this number of files is reached,
-  # the oldest file is deleted and the rest are shifted from last to first. The
-  # default is 7 files.
-  number_of_files: 7
-
-  # Permissions to use for file creation. The default is 0600.
-  permissions: 0600
-
-#----------------------------- Console output ---------------------------------
-output.console:
-  # Boolean flag to enable or disable the output module.
-  enabled: false
-
-  # Pretty print json event
-  pretty: true
-
-
-#================================ Logging =====================================
-# Sets log level. The default log level is info.
-# Available log levels are: critical, error, warning, info, debug
-logging.level: warning
-
-# At debug level, you can selectively enable logging only for some components.
-# To enable all selectors use ["*"]. Examples of other selectors are "beat",
-# "publish", "service".
-logging.selectors: ["*"]
-
-# Send all logging output to syslog. The default is false.
-logging.to_syslog: false
-
-# If enabled, filebeat periodically logs its internal metrics that have changed
-# in the last period. For each metric that changed, the delta from the value at
-# the beginning of the period is logged. Also, the total values for
-# all non-zero internal metrics are logged on shutdown. The default is true.
-logging.metrics.enabled: true
-
-# The period after which to log the internal metrics. The default is 30s.
-logging.metrics.period: 30s
-
-# Set to true to log messages in json format.
-logging.json: false
-
-# Logging to rotating files. Set logging.to_files to false to disable logging to files.
-logging.to_files: true
-
-logging.files:
-  # Configure the path where the logs are written. The default is the logs directory
-  # under the home path (the binary location).
-  path: ${path.logs}
-
-  # The name of the files where the logs are written to.
-  name: filebeat
-
-  # Configure log file size limit. If limit is reached, log file will be automatically rotated (10MB = 10485760)
-  rotateeverybytes: 10485760
-
-  # Number of rotated log files to keep. Oldest files will be deleted first.
-  keepfiles: 7
-
-  # The permissions mask to apply when rotating log files. The default value is 0600.
-  # Must be a valid Unix-style file permissions mask expressed in octal notation.
-  permissions: 0600
