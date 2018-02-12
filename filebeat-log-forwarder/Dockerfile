@@ -14,7 +14,7 @@
 #     posquit0/filebeat-log-forwarder
 #
 
-FROM docker.elastic.co/beats/filebeat:6.1.2
+FROM docker.elastic.co/beats/filebeat:6.2.0
 LABEL maintainer "Byungjin Park <posquit0.bj@gmail.com>"
 
 # Copy configurations
