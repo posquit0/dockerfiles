@@ -31,7 +31,7 @@ filebeat.config:
 #================================ General =====================================
 # The name of the shipper that publishes the network data. It can be used to group
 # all the transactions sent by a single shipper in the web interface.
-name: ${FILEBEAT_NAME:docker-filebeat-log-forwarder}
+name: ${FILEBEAT_NAME:}
 
 # The tags of the shipper are included in their own field with each transaction published.
 tags: '${FILEBEAT_TAGS:docker}'
@@ -99,7 +99,7 @@ path.logs: ${path.home}/logs
 #================================ Logging =====================================
 # Sets log level. The default log level is info.
 # Available log levels are: critical, error, warning, info, debug
-logging.level: warning
+logging.level: ${FILEBEAT_LOGGING_LEVEL:warning}
 
 # At debug level, you can selectively enable logging only for some components.
 # To enable all selectors use ["*"]. Examples of other selectors are "beat", "publish", "service".
@@ -115,16 +115,16 @@ logging.to_eventlog: false
 # in the last period. For each metric that changed, the delta from the value at
 # the beginning of the period is logged. Also, the total values for
 # all non-zero internal metrics are logged on shutdown. The default is true.
-logging.metrics.enabled: true
+logging.metrics.enabled: ${FILEBEAT_LOGGING_METRICS_ENABLED:true}
 
 # The period after which to log the internal metrics. The default is 30s.
 logging.metrics.period: 30s
 
 # Set to true to log messages in json format.
-logging.json: false
+logging.json: ${FILEBEAT_LOGGING_JSON:false}
 
 # Logging to rotating files. Set logging.to_files to false to disable logging to files.
-logging.to_files: true
+logging.to_files: ${FILEBEAT_LOGGING_ENABLED:true}
 
 logging.files:
   # Configure the path where the logs are written. The default is the logs directory
@@ -231,7 +231,7 @@ setup.kibana:
 
 #============================== Xpack Monitoring =====================================
 # Set to true to enable the monitoring reporter.
-xpack.monitoring.enabled: true
+xpack.monitoring.enabled: ${FILEBEAT_MONITORING_ENABLED:true}
 
 # Uncomment to send the metrics to Elasticsearch. Most settings from the
 # Elasticsearch output are accepted here as well. Any setting that is not set is
@@ -284,7 +284,12 @@ http.port: 5066
 
 #================================ Processors ===================================
 processors:
+# Enriches each event with metadata from the cloud provider about the host machine.
+# It works on EC2, GCE, DigitalOcean, Tencent Cloud, and Alibaba Cloud.
 - add_cloud_metadata: ~
+
+# Enriches each event with docker metadata, it matches given fields to an existing
+# container id and adds info from that container:
 # - add_docker_metadata:
     # Docker socket (UNIX or TCP socket). It uses unix:///var/run/docker.sock by default.
     # host: "unix:///var/run/docker.sock"
