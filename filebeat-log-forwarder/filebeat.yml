@@ -307,6 +307,14 @@ processors:
     #   certificate: "/etc/pki/client/cert.pem"
     #   key: "/etc/pki/client/cert.key"
 
+- drop_event:
+    when:
+      or:
+      - contains:
+          req.headers.user-agent: "HealthCheck"
+      - equals:
+          req.path: "/"
+
 
 #========================== Filebeat autodiscover ==============================
 # filebeat.autodiscover:
