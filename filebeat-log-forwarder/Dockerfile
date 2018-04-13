@@ -15,7 +15,7 @@
 #
 
 FROM docker.elastic.co/beats/filebeat:6.2.2
-LABEL maintainer "Byungjin Park <posquit0.bj@gmail.com>"
+LABEL maintainer="Byungjin Park <posquit0.bj@gmail.com>"
 
 # Copy configurations
 COPY filebeat.yml /usr/share/filebeat/filebeat.yml

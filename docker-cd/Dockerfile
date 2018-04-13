@@ -8,7 +8,7 @@
 #
 
 FROM docker:18.01.0-ce
-LABEL maintainer "Byungjin Park <posquit0.bj@gmail.com>"
+LABEL maintainer="Byungjin Park <posquit0.bj@gmail.com>"
 
 # Install needed packages
 RUN apk --no-cache add python py-pip git openssh-client

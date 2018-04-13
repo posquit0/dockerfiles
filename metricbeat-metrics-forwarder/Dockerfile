@@ -17,7 +17,7 @@
 #
 
 FROM docker.elastic.co/beats/metricbeat:6.2.2
-LABEL maintainer "Byungjin Park <posquit0.bj@gmail.com>"
+LABEL maintainer="Byungjin Park <posquit0.bj@gmail.com>"
 
 # Copy configurations
 COPY metricbeat.yml /usr/share/metricbeat/metricbeat.yml
