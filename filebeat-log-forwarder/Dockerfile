@@ -5,7 +5,7 @@
 #   docker build --force-rm -t posquit0/filebeat-log-forwarder .
 # run:
 #   docker run \
-#     --rm --it \
+#     --rm -it \
 #     --network host \
 #     --volume /var/run/docker.sock:/var/run/docker.sock \
 #     --volume filebeat-data:/usr/share/filebeat/data \

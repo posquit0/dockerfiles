@@ -5,7 +5,7 @@
 #   docker build --force-rm -t posquit0/metricbeat-metrics-forwarder .
 # run:
 #   docker run \
-#     --rm --it \
+#     --rm -it \
 #     --network host \
 #     --volume=/proc:/hostfs/proc:ro \
 #     --volume=/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro \
